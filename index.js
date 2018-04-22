@@ -3,27 +3,44 @@ Initialization, where I do initalization stuffs.
 */
 console.log("Starting initialization");
 let initTime = 0;
+
+//let discordInit = false;
+let banchoInit;
+let serverInit;
+
 let initInterval = setInterval(ms, 1);
 function ms () {
-    initTime++;
+    return ++initTime;
 }
-
+function checkInitProgress() {
+    /*console.log("discordInit = " + discordInit);
+    console.log("banchoInit = " + banchoInit);
+    console.log("serverInit = " + serverInit);*/
+    if (banchoInit == true && serverInit == true) {
+        clearInterval(initInterval);
+        console.log("Initialization complete, finished in " + initTime + "ms");
+    } else {
+        console.log("Init next..");
+    }
+}
 //Discord shit
 /*const Discord = require("discord.js");
 console.log("Discord Lib found!");
 const discordClient = new Discord.Client();
 client.on("ready", () => {
-    console.log("Discord Client Ready");
+    discordInit = true;
+    console.log("discordInit = " + discordInit + " >> Discord Client Ready");
+    checkInitProgress();
 });*/
 
 //Bancho shit
 const Banchojs = require("bancho.js");
 console.log("Bancho Lib found!");
 const banchoClient = new Banchojs.BanchoClient(require("bancho.js/config.json"));
-console.log("Bancho Config found!");
+console.log("Bancho User Config found!");
 
 //HTTP Server shit
-let http = require(http);
+let http = require("http");
 let fs = require("fs");
 let port = 3000;
 
@@ -31,9 +48,13 @@ let token;
 let userID = 0;
 
 banchoClient.connect().then(() => {
+    banchoInit = true;
+    console.log("banchoInit = " + banchoInit + " >> Bancho Client Succesfully Connected");
+    checkInitProgress();
 }).catch(console.error);
+
 function banchoSendToken(token) {
-    banchoClient.connect().then(() => {
+    banchoClient.then(() => {
         let user = new getUserById(userID);
         sendMessage("This is an automated message!");
 	    sendMessage("Please input the token sent below into the CMP website:");
@@ -79,14 +100,11 @@ function req (request, response) {
     }
 }
 
-clearInterval(initInterval);
-console.log("Initialization complete, finished in " + initTime);
-
+console.log("Starting server...");
+let server = http.createServer(req).listen(port);
+serverInit = true;
+console.log("serverInit = " + serverInit + " >> Server running, listening to port \"" + port + "\"");
+checkInitProgress();
 /*
 End of Initialization.
 */
-
-console.log("Starting server...");
-let server = http.createServer(req).listen(port);
-console.log("Server running, listening to port " + port);
-
