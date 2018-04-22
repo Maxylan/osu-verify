@@ -40,7 +40,7 @@ function banchoSendToken(token) {
         sendMessage(token);
         console.log("Token generated and sent to: " + user);
         userID = 0;
-    	banchoClient.disconnect();
+    	//banchoClient.disconnect(); 
     }).catch(console.error);
 }
 
@@ -64,7 +64,7 @@ function req (request, response) {
            console.error(err);
         });
         //If the shared secret is true, after "body[]" has been parsed and before response fires, I want to trigger banchoSendToken.
-        banchoSendToken(user, token);
+        banchoSendToken(token);
 
         response.statusCode = 200;
         response.setHeader('Content-Type', 'application/json');
