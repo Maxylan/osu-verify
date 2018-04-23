@@ -42,7 +42,7 @@ let http = require("http");
 let fs = require("fs");
 let port = 3000;
 
-let token;
+let token = 0;
 let userID = 0;
 
 banchoClient.connect().then(() => {
@@ -51,27 +51,26 @@ banchoClient.connect().then(() => {
     checkInitProgress();
 }).catch(console.error);
 
-function verifySuccess() {
+/*function verifySuccess() {
     setTimeout(() => {
-        if (errorFound == false) {
-            console.log("It all worked out fine in the end.");
-            response.statusCode = 200;
-            response.setHeader("Content-Type", "application/json");
+        console.log("It all worked out fine in the end.");
+        response.statusCode = 200;
+        response.setHeader("Content-Type", "application/json");
 
-            const responseBody = { headers, method, url, body };
+        const responseBody = { headers, method, url, body };
 
-            response.write(JSON.stringify(responseBody));
-            response.end();
-        }
+        response.write(JSON.stringify(responseBody));
+        response.end();
     }, 1000);
 }
 
 function banchoSendToken(token) {
     banchoClient.getUserById(userID).then(function (user) {
-        user.sendMessage("This is an automated message!");
-        user.sendMessage("Please input the token sent below into the CMP website:");
-        user.sendMessage(token);
-        console.log("Token generated and sent to: " + user);
+        //user.sendMessage("This is an automated message!");
+        user.sendMessage("This is an automated message! Please input the token sent below into the CMP website:");
+        console.log("Token is: " + token);
+        user.sendMessage(token.toString());
+        console.log("Token recieved and sent to user: " + user);
         userID = 0;
         token = 0;
         verifySuccess();
@@ -80,7 +79,7 @@ function banchoSendToken(token) {
         console.log(err);
     });
     //banchoClient.disconnect();
-}
+}*/
 
 function req (request, response) {
 
@@ -122,9 +121,39 @@ function req (request, response) {
             } else {
                 if (sharedSecret == parsedBody.sharedSecret) {
                     //If the shared secret is true, after "body[]" has been parsed and before response fires, I want to trigger banchoSendToken.
-                    //let errorFound = false;
+                    function verifySuccess() {
+                        setTimeout(() => {
+                            console.log("It all worked out fine in the end.");
+                            response.statusCode = 200;
+                            response.setHeader("Content-Type", "application/json");
+
+                            const responseBody = { headers, method, url, body };
+
+                            response.write(JSON.stringify(responseBody));
+                            response.end();
+                        }, 1000);
+                    }
+
+                    function banchoSendToken(token) {
+                        banchoClient.getUserById(userID).then(function (user) {
+                            //user.sendMessage("This is an automated message!");
+                            user.sendMessage("This is an automated message! Please input the token sent below into the CMP website:");
+                            console.log("Token is: " + token);
+                            user.sendMessage(token.toString());
+                            console.log("Token recieved and sent to user: " + user);
+                            userID = 0;
+                            token = 0;
+                            verifySuccess();
+                        }).catch(function (err) {
+                            console.log("Something went wrong in \"banchoSendToken\" when attempting to message user!");
+                            console.log(err);
+                        });
+                        //banchoClient.disconnect();
+                    }
+
                     token = parsedBody.osuToken;
                     userID = parsedBody.osuId;
+
                     try {
                         banchoSendToken(token);
                     } catch(err) {

@@ -17,7 +17,7 @@ let port = 3001;
 function postOsuVerify() {
     request.post(
         'http://localhost:3000/osuverify',
-        { json: { sharedSecret: 1, osuToken: 2, osuId: 3408126 } },
+        { json: { sharedSecret: 1, osuToken: 2, osuId: 8129817 } },
         function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 console.log(body);
