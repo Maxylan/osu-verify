@@ -13,9 +13,6 @@ function ms () {
     return ++initTime;
 }
 function checkInitProgress() {
-    /*console.log("discordInit = " + discordInit);
-    console.log("banchoInit = " + banchoInit);
-    console.log("serverInit = " + serverInit);*/
     if (banchoInit == true && serverInit == true) {
         clearInterval(initInterval);
         console.log("Initialization complete, finished in " + initTime + "ms");
@@ -40,6 +37,7 @@ const banchoClient = new Banchojs.BanchoClient(require("bancho.js/config.json"))
 console.log("Bancho User Config found!");
 
 //HTTP Server shit
+let request = require('request');
 let http = require("http");
 let fs = require("fs");
 let port = 3000;
@@ -53,16 +51,35 @@ banchoClient.connect().then(() => {
     checkInitProgress();
 }).catch(console.error);
 
+function verifySuccess() {
+    setTimeout(() => {
+        if (errorFound == false) {
+            console.log("It all worked out fine in the end.");
+            response.statusCode = 200;
+            response.setHeader("Content-Type", "application/json");
+
+            const responseBody = { headers, method, url, body };
+
+            response.write(JSON.stringify(responseBody));
+            response.end();
+        }
+    }, 1000);
+}
+
 function banchoSendToken(token) {
-    banchoClient.then(() => {
-        let user = new getUserById(userID);
-        sendMessage("This is an automated message!");
-	    sendMessage("Please input the token sent below into the CMP website:");
-        sendMessage(token);
+    banchoClient.getUserById(userID).then(function (user) {
+        user.sendMessage("This is an automated message!");
+        user.sendMessage("Please input the token sent below into the CMP website:");
+        user.sendMessage(token);
         console.log("Token generated and sent to: " + user);
         userID = 0;
-    	//banchoClient.disconnect(); 
-    }).catch(console.error);
+        token = 0;
+        verifySuccess();
+    }).catch(function (err) {
+        console.log("Something went wrong in \"banchoSendToken\" when attempting to message user!");
+        console.log(err);
+    });
+    //banchoClient.disconnect();
 }
 
 function req (request, response) {
@@ -70,7 +87,10 @@ function req (request, response) {
     const { headers, method, url } = request;
     
     if (request.method === 'POST' && request.url === '/osuverify') {
+        console.log("################### OSU VERIFY POST REQUEST DETECTED ###################");
+        let chunkNumber = 0;
         let body = [];
+        let sharedSecret = 1;
         request.on('error', (err) => {
             console.error(err);
         })
@@ -78,22 +98,62 @@ function req (request, response) {
             body.push(chunk);
         })
         .on('end', () => {
+            ++chunkNumber;
             body = Buffer.concat(body).toString();
+            console.log("Chunk number: " + chunkNumber + " >> Current body data = " + " \" " + body + " \" ");
         });
 
         response.on('error', (err) => {
            console.error(err);
         });
-        //If the shared secret is true, after "body[]" has been parsed and before response fires, I want to trigger banchoSendToken.
-        banchoSendToken(token);
 
-        response.statusCode = 200;
-        response.setHeader('Content-Type', 'application/json');
+        setTimeout(() => {
+            let parsedBody = JSON.parse(body);
+            
+            console.log("Final body data: " + parsedBody.sharedSecret + ", " + parsedBody.osuToken + ", " + parsedBody.osuId + ".");
+            if (parsedBody.sharedSecret == 0 || parsedBody.osuToken == 0 || parsedBody.osuId == 0) {
+                console.log("ERROR >> Package corrupted or invalid.");
+                response.statusCode = 404;
+                response.end();
+            } else if (parsedBody.sharedSecret == null || parsedBody.osuToken == null || parsedBody.osuId == null) {
+                console.log("ERROR >> Package corrupted or invalid.");
+                response.statusCode = 404;
+                response.end();
+            } else {
+                if (sharedSecret == parsedBody.sharedSecret) {
+                    //If the shared secret is true, after "body[]" has been parsed and before response fires, I want to trigger banchoSendToken.
+                    //let errorFound = false;
+                    token = parsedBody.osuToken;
+                    userID = parsedBody.osuId;
+                    try {
+                        banchoSendToken(token);
+                    } catch(err) {
+                        console.log("Something went wrong in the \"request respond function\" when attempting to fire \"banchoSendToken\"!");
+                        console.log(err);
+                        //errorFound = true;
+                        response.statusCode = 404;
+                        response.end();
+                    }
 
-        const responseBody = { headers, method, url, body };
+                    /*setTimeout(() => {
+                        if (errorFound == false) {
+                            console.log("It all worked out fine in the end.");
+                            response.statusCode = 200;
+                            response.setHeader("Content-Type", "application/json");
 
-        response.write(JSON.stringify(responseBody));
-        response.end();
+                            const responseBody = { headers, method, url, body };
+
+                            response.write(JSON.stringify(responseBody));
+                            response.end();
+                        }
+                    }, 1000);*/
+                } else {
+                    console.log("DETECTED ATTEMPTED POST REQUEST WITH INVALID SECRET.");
+                    response.statusCode = 404;
+                    response.end();
+                }
+            }
+        }, 800);
     } else {
         response.statusCode = 404;
         response.end();

@@ -4,14 +4,15 @@
   "description": "Verify osu account",
   "main": "index.js",
   "scripts": {
-    "start":  "node index.js",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Max Olsson",
   "license": "ISC",
   "dependencies": {
     "bancho.js": "^0.8.1",
-    "discord.js": "^11.3.2"
+    "discord.js": "^11.3.2",
+    "request": "^2.85.0"
   },
   "devDependencies": {
     "eslint": "^4.19.1"
